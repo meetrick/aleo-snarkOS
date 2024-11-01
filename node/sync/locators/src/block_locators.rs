@@ -61,11 +61,10 @@ impl<N: Network> IntoIterator for BlockLocators<N> {
     type IntoIter = IntoIter<u32, N::BlockHash>;
     type Item = (u32, N::BlockHash);
 
-    // TODO (howardwu): Consider using `BTreeMap::from_par_iter` if it is more performant.
-    //  Check by sorting 300-1000 items and comparing the performance.
-    //  (https://docs.rs/indexmap/latest/indexmap/map/struct.IndexMap.html#method.from_par_iter)
+    // Combine checkpoints and recents in parallel and create a sorted BTreeMap
     fn into_iter(self) -> Self::IntoIter {
-        BTreeMap::from_iter(self.checkpoints.into_iter().chain(self.recents)).into_iter()
+        let combined = self.checkpoints.into_par_iter().chain(self.recents.into_par_iter()).collect::<Vec<_>>();
+        BTreeMap::from_iter(combined).into_iter()
     }
 }
 
