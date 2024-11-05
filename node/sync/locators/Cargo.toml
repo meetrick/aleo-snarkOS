@@ -21,6 +21,9 @@ default = [ ]
 test = [ ]
 test_targets = [ "snarkvm/test_targets" ]
 
+[dependencies]
+rayon = "1.10"
+
 [dependencies.anyhow]
 version = "1.0"
 
