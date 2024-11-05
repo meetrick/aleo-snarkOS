@@ -396,10 +396,39 @@ pub mod test_helpers {
 mod tests {
     use super::*;
     use snarkvm::prelude::Field;
+    use std::time::Instant;
 
     use core::ops::Range;
 
     type CurrentNetwork = snarkvm::prelude::MainnetV0;
+
+    /// Generates a large dataset of BlockLocators to test the performance of the iterator.
+    fn generate_large_block_locators(num_blocks: u32) -> BlockLocators<CurrentNetwork> {
+        let mut recents = IndexMap::new();
+        let mut checkpoints = IndexMap::new();
+
+        for i in 0..num_blocks {
+            recents.insert(i, Field::<CurrentNetwork>::from_u32(i).into());
+            if i % CHECKPOINT_INTERVAL == 0 {
+                checkpoints.insert(i, Field::<CurrentNetwork>::from_u32(i).into());
+            }
+        }
+
+        BlockLocators::new_unchecked(recents, checkpoints)
+    }
+
+    #[test]
+    fn test_block_locators_iterator_performance() {
+        // Generate a dataset with 1000 items for testing
+        let block_locators = generate_large_block_locators(1000);
+
+        // Measure time taken for the iterator with parallel processing
+        let start = Instant::now();
+        let _: Vec<_> = block_locators.clone().into_iter().collect();
+        let duration_parallel = start.elapsed();
+
+        println!("Time taken with parallel processing: {:?}", duration_parallel);
+    }
 
     /// Simulates block locators for a ledger within the given `heights` range.
     fn check_is_valid(checkpoints: IndexMap<u32, <CurrentNetwork as Network>::BlockHash>, heights: Range<u32>) {
